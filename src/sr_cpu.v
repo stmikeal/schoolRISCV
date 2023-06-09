@@ -21,7 +21,9 @@ module sr_cpu
 );
     //control wires
     wire        aluZero;
+    wire        aluNeg;
     wire        pcSrc;
+    wire        pcStop;
     wire        regWrite;
     wire        aluSrc;
     wire        wdSrc;
@@ -42,7 +44,7 @@ module sr_cpu
     wire [31:0] pc;
     wire [31:0] pcBranch = pc + immB;
     wire [31:0] pcPlus4  = pc + 4;
-    wire [31:0] pcNext   = pcSrc ? pcBranch : pcPlus4;
+    wire [31:0] pcNext   = pcStop ? pc : (pcSrc ? pcBranch : pcPlus4);
     sm_register r_pc(clk ,rst_n, pcNext, pc);
 
     //program memory access
@@ -69,6 +71,22 @@ module sr_cpu
     wire [31:0] rd2;
     wire [31:0] wd3;
 
+    wire [9:0]  mathShort;
+    wire [31:0] mathResult;
+    assign mathResult = {22'b0, mathShort};
+
+    func math_block(
+        .clk        ( clk         ),
+        .rst        ( ~rst_n       ),
+        .start      ( mathStart    ),
+        .a          ( rd1[7:0]     ),
+        .b          ( rd2[7:0]     ),
+        .res        ( mathShort    ),
+        .busy       ( mathBusy     )
+    );
+
+    
+
     sm_register_file rf (
         .clk        ( clk          ),
         .a0         ( regAddr      ),
@@ -94,10 +112,11 @@ module sr_cpu
         .srcB       ( srcB         ),
         .oper       ( aluControl   ),
         .zero       ( aluZero      ),
+        .neg        ( aluNeg       ),
         .result     ( aluResult    ) 
     );
 
-    assign wd3 = wdSrc ? immU : aluResult;
+    assign wd3 = ~mathStart ? mathResult : (wdSrc ? immU : aluResult);
 
     //control
     sr_control sm_control (
@@ -105,11 +124,15 @@ module sr_cpu
         .cmdF3      ( cmdF3        ),
         .cmdF7      ( cmdF7        ),
         .aluZero    ( aluZero      ),
+        .aluNeg     ( aluNeg       ),
+        .mathBusy   ( mathBusy     ),
+        .mathStart  ( mathStart    ),
         .pcSrc      ( pcSrc        ),
         .regWrite   ( regWrite     ),
         .aluSrc     ( aluSrc       ),
         .wdSrc      ( wdSrc        ),
-        .aluControl ( aluControl   ) 
+        .aluControl ( aluControl   ),
+        .pcStop     ( pcStop       )
     );
 
 endmodule
@@ -163,15 +186,20 @@ module sr_control
     input     [ 2:0] cmdF3,
     input     [ 6:0] cmdF7,
     input            aluZero,
+    input            aluNeg,
+    input            mathBusy,
+    output reg       mathStart,
     output           pcSrc, 
     output reg       regWrite, 
     output reg       aluSrc,
     output reg       wdSrc,
-    output reg [2:0] aluControl
+    output reg [2:0] aluControl,
+    output reg       pcStop
 );
     reg          branch;
     reg          condZero;
-    assign pcSrc = branch & (aluZero == condZero);
+    reg          condLess;
+    assign pcSrc = branch & ( ((aluZero == condZero) & ~condLess) | (condLess & aluNeg));
 
     always @ (*) begin
         branch      = 1'b0;
@@ -179,6 +207,9 @@ module sr_control
         regWrite    = 1'b0;
         aluSrc      = 1'b0;
         wdSrc       = 1'b0;
+        condLess    = 1'b0;
+        mathStart   = 1'b1;
+        pcStop      = 1'b0;
         aluControl  = `ALU_ADD;
 
         casez( {cmdF7, cmdF3, cmdOp} )
@@ -193,6 +224,11 @@ module sr_control
 
             { `RVF7_ANY,  `RVF3_BEQ,  `RVOP_BEQ  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SUB; end
             { `RVF7_ANY,  `RVF3_BNE,  `RVOP_BNE  } : begin branch = 1'b1; aluControl = `ALU_SUB; end
+            { `RVF7_ANY,  `RVF3_BLT,  `RVOP_BLT  } : begin branch = 1'b1; condLess = 1'b1; aluControl = `ALU_SUB; end
+            { `RVF7_ANY,  `RVF3_ANY,  `RVOP_FUN  } : begin mathStart = 1'b0; 
+                if (~mathBusy) begin pcStop = 1'b1; regWrite = 1'b0; 
+                end else begin regWrite = 1'b1; end 
+            end
         endcase
     end
 endmodule
@@ -203,6 +239,7 @@ module sr_alu
     input  [31:0] srcB,
     input  [ 2:0] oper,
     output        zero,
+    output        neg,
     output reg [31:0] result
 );
     always @ (*) begin
@@ -217,6 +254,7 @@ module sr_alu
     end
 
     assign zero   = (result == 0);
+    assign neg    = (result[31]);
 endmodule
 
 module sm_register_file

@@ -20,16 +20,20 @@
 `define RVOP_BEQ    7'b1100011
 `define RVOP_LUI    7'b0110111
 `define RVOP_BNE    7'b1100011
+`define RVOP_BLT    7'b1100011
 `define RVOP_ADD    7'b0110011
 `define RVOP_OR     7'b0110011
 `define RVOP_SRL    7'b0110011
 `define RVOP_SLTU   7'b0110011
 `define RVOP_SUB    7'b0110011
+`define RVOP_FUN    7'b1110111
+
 
 // instruction funct3
 `define RVF3_ADDI   3'b000
 `define RVF3_BEQ    3'b000
 `define RVF3_BNE    3'b001
+`define RVF3_BLT    3'b100
 `define RVF3_ADD    3'b000
 `define RVF3_OR     3'b110
 `define RVF3_SRL    3'b101

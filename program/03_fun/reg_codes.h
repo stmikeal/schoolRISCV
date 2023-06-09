@@ -1,0 +1,71 @@
+#ifndef _REG_CODES
+#define _REG_CODES
+
+#define rx0 00000
+#define rx1 00001
+#define rx2 00010
+#define rx3 00011
+#define rx4 00100
+#define rx5 00101
+#define rx6 00110
+#define rx7 00111
+#define rx8 01000
+#define rx9 01001
+#define rx10 01010
+#define rx11 01011
+#define rx12 01100
+#define rx13 01101
+#define rx14 01110
+#define rx15 01111
+#define rx16 10000
+#define rx17 10001
+#define rx18 10010
+#define rx19 10011
+#define rx20 10100
+#define rx21 10101
+#define rx22 10110
+#define rx23 10111
+#define rx24 11000
+#define rx25 11001
+#define rx26 11010
+#define rx27 11011
+#define rx28 11100
+#define rx29 11101
+#define rx30 11110
+#define rx31 11111
+
+#define rzero 00000
+#define rra 00001
+#define rsp 00010
+#define rgp 00011
+#define rtp 00100
+#define rt0 00101
+#define rt1 00110
+#define rt2 00111
+#define rfp 01000
+#define rs0 01000
+#define rs1 01001
+#define ra0 01010
+#define ra1 01011
+#define ra2 01100
+#define ra3 01101
+#define ra4 01110
+#define ra5 01111
+#define ra6 10000
+#define ra7 10001
+#define rs2 10010
+#define rs3 10011
+#define rs4 10100
+#define rs5 10101
+#define rs6 10110
+#define rs7 10111
+#define rs8 11000
+#define rs9 11001
+#define rs10 11010
+#define rs11 11011
+#define rt3 11100
+#define rt4 11101
+#define rt5 11110
+#define rt6 11111
+
+#endif
