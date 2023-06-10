@@ -82,9 +82,14 @@ module func(
         .res(res_shift)
     );
     
-    always @(posedge clk, posedge rst, posedge start) begin
-        if (rst) begin
-            state <= 0;
+    always @(posedge clk) begin
+        if (start) begin
+            state <= START;
+            busy_inner <= 0;
+            res_inner <= 0;
+            load <= 0;
+        end else
+        if (rst)begin
             busy_inner <= 0;
             X <= 0;
             B <= 0;
@@ -92,14 +97,7 @@ module func(
             S <= 0;
             res_inner <= 0;
             load <= 0;
-        end 
-        if (start) begin
-            state <= START;
-            busy_inner <= 0;
-            res_inner <= 0;
-            load <= 0;
-        end
-        else begin
+        end else begin
             case (state)
                 START: begin 
                     X <= b;
@@ -114,14 +112,15 @@ module func(
                 MUL2: begin 
                     if (!load) begin
                         a_mul_1 <= Y;
-                        b_mul_1 <= 2;
+                        b_mul_1 <= 2;;
                         load <= 1;
                         rst_mul_1 <= 1;
                     end
-                    else if (load == 1) begin
+                    else if (load == 1) load <= 2;
+                    else if (load == 2) begin
                         rst_mul_1 <= 0;
                         if (busy_mul_1) begin
-                            load <= 2;
+                            load <= 3;
                             Y <= res_mul_1;
                         end
                     end else begin
@@ -143,32 +142,34 @@ module func(
                         load <= 1;
                         rst_mul_1 <= 1;
                     end
+                    else if (load == 1) load <= 2;
                     else begin
                         rst_mul_1 <= 0;
                         if (busy_mul_1) begin
-                            if (load == 1) begin
+                            if (load == 2) begin
                                 a_mul_2 <= res_mul_1;
                                 b_mul_2 <= res_adder;
                                 rst_mul_2 <= 1;
-                                load <= 2;
+                                load <= 3;
                             end 
-                            else if (load == 2) begin
+                            else if (load == 3) load <= 4;
+                            else if (load == 4) begin
                                 rst_mul_2 <= 0;
                                 if (busy_mul_2) begin
                                     sub_adder <= 0;
                                     a_adder <= res_mul_2;
                                     b_adder <= 1;
-                                    load <= 3;
+                                    load <= 5;
                                 end
                             end
-                            else if (load == 3) begin
+                            else if (load == 5) begin
                                     B <= res_shift;
                                     //$display("B: %d", B);
                                     load <= 0;
                                     a_adder <= S;
                                     sub_adder <= 1;
                                     b_adder <= 8'd3;
-                                    load <= 4;
+                                    load <= 6;
                             end
                             else begin
                                 load <= 0;
@@ -211,6 +212,7 @@ module func(
                         rst_mul_1 <= 1;
                         load <= 1;
                     end
+                    else if (load == 1) load <= 2;
                     else begin
                         rst_mul_1 <= 0;
                         if (busy_mul_1) begin
@@ -222,17 +224,15 @@ module func(
                 end
                 RESULT: begin 
                     if (!load) begin
-                        $display("X: %d", X);
-                        $display("Y: %d", Y);
-                        $display("a: %d", a);
-                        $display("b: %d", b);
+                        //$display("X: %d", X);
+                        //$display("Y: %d", Y);
                         a_adder <= X;
                         sub_adder <= 0;
                         b_adder <= Y;
                         load <= 1;
                     end
                     else begin 
-                        $display("res: %d", res_adder);
+                        $display("%d lol", res_adder);
                         res_inner <= res_adder;
                         load <= 0;
                         busy_inner <= 1;
@@ -241,6 +241,6 @@ module func(
                     end
                 end
             endcase
-        end 
+        end
     end
 endmodule

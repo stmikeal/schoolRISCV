@@ -16,28 +16,27 @@ module mult(
     reg busy_inner;
     assign busy = busy_inner;
     assign res = result;
-    always @(posedge clk, posedge rst, posedge start) begin
-        if (rst) begin
-            a_in <= 0;
-            b_in <= 0;
-            state <= 0;
-            result <= 0;
-            busy_inner <= 0;
-        end
-        else if (start) begin
+    
+    always @(posedge clk) begin
+        if (start) begin
             a_in <= a;
             b_in <= b;
             state <= 0;
             result <= 0;
             busy_inner <= 0;
         end
-        else begin
-            if (state == 8)
-                busy_inner <= 1;
-            else begin 
-                result <= result + b[state] * (a << state);
-                state <= state + 1;
-            end
+        else if (rst) begin
+            a_in <= 0;
+            b_in <= 0;
+            state <= 0;
+            result <= 0;
+            busy_inner <= 0;
+        end else
+        if (state == 8)
+            busy_inner <= 1;
+        else begin 
+            result <= result + b[state] * (a << state);
+            state <= state + 1;
         end
     end
 endmodule
